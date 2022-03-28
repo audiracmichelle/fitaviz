@@ -1,0 +1,71 @@
+# emissions
+
+```{r}
+library(tidyverse)
+library(magrittr)
+library(lubridate)
+library(viridis)
+```
+
+```{r}
+minute_data <- readRDS("../data/preprocess_minute_data__export_2.rds")
+```
+
+* Steps and proprietary activity levels
+
+```{r,fig.width = 8, fig.height = 10}
+minute_data %>% 
+  filter(!is.na(steps)) %>% 
+  group_by(id) %>% 
+  sample_n(2400) %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = as.factor(intensity), y = steps)) + 
+  geom_jitter(aes(x = as.factor(intensity), y = steps, color = HR), alpha = 0.75) + 
+  guides(color = "none") + 
+  scale_color_gradientn(colors = c("white", "black", "red")) +
+  facet_wrap(~id, ncol=4, strip.position = "left")
+```
+
+```{r,fig.width = 8, fig.height = 10}
+minute_data %>% 
+  filter(!is.na(HR)) %>% 
+  group_by(id) %>% 
+  sample_n(2400, replace = T) %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = as.factor(intensity), y = HR)) + 
+  geom_jitter(aes(x = as.factor(intensity), y = HR, color = steps), alpha = 0.75) + 
+  guides(color = "none") + 
+  scale_color_gradientn(colors = c("yellow", "blue", "red")) +
+  facet_wrap(~id, ncol=4, strip.position = "left")
+```
+
+* Select adherent periods and obtain emissions sequence for each participant
+
+```{r}
+minute_data %<>% 
+  mutate(hour = hour(time), 
+         weekday = wday(date, label = TRUE), 
+         is_eight2eight = (hour >= 8) & (hour < 20), 
+         is_wear = !(is.na(HR) | is.na(steps))) %>% 
+  group_by(id, date) %>% 
+  mutate(is_adherent_day = (sum(is_wear & is_eight2eight) >= (10 * 60))) %>% 
+  ungroup() %>% 
+  mutate(is_adherent_wear = is_wear & is_eight2eight & is_adherent_day, 
+         is_nonadherent_wear = is_wear & is_eight2eight & !is_adherent_day)
+```
+
+* emissions dataset
+
+```{r}
+emissions <- minute_data %>% 
+  filter(is_eight2eight, is_adherent_day) %>% 
+  mutate(steps = if_else(!is_wear, as.numeric(NA), steps)) %>% 
+  select(id, date, time, hour, weekday, steps, HR, intensity)
+```
+
+```{r}
+for(id_ in unique(emissions$id)) {
+  write_csv(filter(emissions, id == id_), 
+            paste0("../data/hmm_input/emissions_", id_, ".csv"))
+}
+```

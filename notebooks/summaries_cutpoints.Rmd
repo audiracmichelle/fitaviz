@@ -1,0 +1,550 @@
+# summaries
+
+```{r}
+library(tidyverse)
+library(magrittr)
+library(lubridate)
+library(ggplot2)
+library(viridis)
+library(plotly)
+library(betareg)
+```
+
+```{r}
+minute_data <- read_rds("../data/preprocess_minute_data__export_2.rds") %>% 
+  mutate(hour = hour(time), 
+         weekday = wday(date, label = TRUE), 
+         is_eight2eight = (hour >= 8) & (hour < 20), 
+         is_wear = !(is.na(HR) | is.na(steps))) %>% 
+  group_by(id, date) %>% 
+  mutate(is_adherent_day = (sum(is_wear & is_eight2eight) >= (10 * 60))) %>% 
+  ungroup() %>% 
+  mutate(is_adherent_wear = is_wear & is_eight2eight & is_adherent_day, 
+         is_nonadherent_wear = is_wear & is_eight2eight & !is_adherent_day) 
+```
+
+```{r}
+## modify intensity
+minute_data$intensity_ <- minute_data$intensity
+minute_data$intensity <- NA
+minute_data$intensity[minute_data$steps <= 15] <- 0 
+minute_data$intensity[minute_data$steps > 15 & minute_data$steps <= 60] <- 1 
+minute_data$intensity[minute_data$steps > 60] <- 2 
+
+summary(as.factor(minute_data$intensity_))
+summary(as.factor(minute_data$intensity))
+```
+
+
+# ----------------------------
+modify patient id for delivery (group by patient id/label)
+
+include different activity measures
+# ----------------------------
+
+## patient summary
+
+```{r}
+wear_summary <- minute_data %>% 
+  group_by(id) %>% 
+  summarise(
+    min_date = min(date), 
+    max_date = max(date), 
+    daytime_hours = as.numeric(max_date - min_date + 1) * 12, 
+    daytime_wear_hours = sum(is_wear * is_eight2eight) / 60, 
+    adherent_wear_hours = sum(is_adherent_wear) / 60,
+    nonadherent_wear_hours = sum(is_nonadherent_wear) / 60, 
+    daytime_wear_pct = if_else(daytime_hours == 0, as.numeric(NA), 
+                               daytime_wear_hours / daytime_hours),
+    nonadherent_ratio = if_else(adherent_wear_hours == 0, as.numeric(NA), 
+                                nonadherent_wear_hours / adherent_wear_hours)
+  )
+
+wear_summary
+```
+
+```{r}
+summary(wear_summary$daytime_wear_hours)
+
+wear_summary %>% 
+  ggplot() + 
+  geom_histogram(aes(x = daytime_wear_pct), bins = 10)
+```
+
+```{r}
+wear_summary %>% 
+  ggplot() + 
+  geom_point(aes(x = daytime_hours, y = daytime_wear_hours, 
+                 size = nonadherent_ratio, color = nonadherent_ratio, alpha = 0.5))
+```
+
+```{r}
+daytime_wear_summary <- minute_data %>% 
+  mutate(pos_steps = if_else(steps > 0, steps, as.numeric(NA))) %>% 
+  filter(is_wear & is_eight2eight) %>% 
+  group_by(id) %>% 
+  summarise(
+    min_HR__DWT = min(HR), 
+    max_HR__DWT = max(HR), 
+    mean_HR__DWT = mean(HR), 
+    sd_HR__DWT = sd(HR), 
+    max_pos_steps__DWT = max(pos_steps, na.rm = T), 
+    mean_pos_steps__DWT = mean(pos_steps, na.rm = T), 
+    #sd__pos_steps = sd(pos_steps, na.rm = T), 
+    zero_steps_hours__DWT = sum(steps == 0) / 60, 
+    sed_hours__DWT = sum(intensity == 0) / 60, 
+    lipa_hours__DWT = sum(intensity == 1) / 60, 
+    mvpa_hours__DWT = sum(intensity == 2) / 60
+  )
+
+daytime_wear_summary
+```
+
+```{r}
+adherent_wear_summary <- minute_data %>% 
+  mutate(pos_steps = if_else(steps > 0, steps, as.numeric(NA))) %>% 
+  filter(is_adherent_wear) %>% 
+  group_by(id) %>% 
+  summarise(
+    min_HR__AWT = min(HR), 
+    max_HR__AWT = max(HR), 
+    mean_HR__AWT = mean(HR), 
+    sd_HR__AWT = sd(HR), 
+    max_pos_steps__AWT = max(pos_steps, na.rm = T), 
+    mean_pos_steps__AWT = mean(pos_steps, na.rm = T), 
+    #sd__pos_steps = sd(pos_steps, na.rm = T), 
+    zero_steps_hours__AWT = sum(steps == 0) / 60, 
+    sed_hours__AWT = sum(intensity == 0) / 60, 
+    lipa_hours__AWT = sum(intensity == 1) / 60, 
+    mvpa_hours__AWT = sum(intensity == 2) / 60
+  )
+
+adherent_wear_summary
+```
+
+```{r}
+nonadh_wear_summary <- minute_data %>% 
+  mutate(pos_steps = if_else(steps > 0, steps, as.numeric(NA))) %>% 
+  filter(is_nonadherent_wear) %>% 
+  group_by(id) %>% 
+  summarise(
+    min_HR__NAW = min(HR), 
+    max_HR__NAW = max(HR), 
+    mean_HR__NAW = mean(HR), 
+    sd_HR__NAW = sd(HR), 
+    max_pos_steps__NAW = max(pos_steps, na.rm = T), 
+    mean_pos_steps__NAW = mean(pos_steps, na.rm = T), 
+    #sd__pos_steps = sd(pos_steps, na.rm = T), 
+    zero_steps_hours__NAW = sum(steps == 0) / 60, 
+    sed_hours__NAW = sum(intensity == 0) / 60, 
+    lipa_hours__NAW = sum(intensity == 1) / 60, 
+    mvpa_hours__NAW = sum(intensity == 2) / 60
+  )
+
+nonadh_wear_summary
+```
+
+```{r}
+patient_summary <- wear_summary %>% 
+  full_join(daytime_wear_summary) %>% 
+  full_join(adherent_wear_summary) %>% 
+  full_join(nonadh_wear_summary)
+
+patient_summary %<>% 
+  mutate(
+    zero_steps_prop__DWT = zero_steps_hours__DWT / daytime_wear_hours, 
+    sed_prop__DWT = sed_hours__DWT / daytime_wear_hours, 
+    lipa_prop__DWT = lipa_hours__DWT / daytime_wear_hours, 
+    mvpa_prop__DWT = mvpa_hours__DWT / daytime_wear_hours,  
+    zero_steps_prop__AWT = zero_steps_hours__AWT / adherent_wear_hours, 
+    sed_prop__AWT = sed_hours__AWT / adherent_wear_hours, 
+    lipa_prop__AWT = lipa_hours__AWT / adherent_wear_hours, 
+    mvpa_prop__AWT = mvpa_hours__AWT / adherent_wear_hours, 
+    zero_steps_prop__NAW = zero_steps_hours__NAW / nonadherent_wear_hours, 
+    sed_prop__NAW = sed_hours__NAW / nonadherent_wear_hours, 
+    lipa_prop__NAW = lipa_hours__NAW / nonadherent_wear_hours, 
+    mvpa_prop__NAW = mvpa_hours__NAW / nonadherent_wear_hours, 
+    low_pa_prop__DWT = (sed_hours__DWT) / daytime_wear_hours, 
+    hi_pa_prop__DWT = (lipa_hours__DWT + mvpa_hours__DWT) / daytime_wear_hours, 
+    low_pa_prop__AWT = (sed_hours__AWT) / adherent_wear_hours, 
+    hi_pa_prop__AWT = (lipa_hours__AWT + mvpa_hours__AWT) / adherent_wear_hours, 
+    low_pa_prop__NAW = (sed_hours__NAW) / nonadherent_wear_hours, 
+    hi_pa_prop__NAW = (lipa_hours__NAW + mvpa_hours__NAW) / nonadherent_wear_hours,
+    low_pa_prop_ratio = low_pa_prop__NAW / low_pa_prop__AWT
+  )
+```
+
+```{r}
+# at least 20 days
+ggplotly(
+patient_summary %>% 
+  filter(daytime_wear_hours > 12 * 20) %>% 
+  ggplot() +
+  geom_point(aes(x = mean_HR__NAW, y = mean_HR__AWT, 
+                 size = nonadherent_ratio, color = nonadherent_ratio, 
+                 alpha = 0.5, text = paste("id:", id)))
+)
+
+ggplotly(
+patient_summary  %>% 
+  filter(daytime_wear_hours > 12 * 20) %>% 
+  ggplot() +
+  geom_point(aes(x = mean_pos_steps__NAW, y = mean_pos_steps__AWT, 
+                 size = nonadherent_ratio, color = nonadherent_ratio, 
+                 alpha = 0.5, text = paste("id:", id)))
+)
+```
+
+```{r}
+# at least 20 days
+ggplotly(
+patient_summary %>% 
+  filter(daytime_wear_hours > 12 * 20) %>% 
+  ggplot() +
+  geom_point(aes(x = low_pa_prop__NAW, y = low_pa_prop__AWT, 
+                 size = nonadherent_ratio, color = nonadherent_ratio, alpha = 0.5, 
+                 alpha = 0.5, text = paste("id:", id)))
+)
+
+ggplotly(
+patient_summary %>% 
+  filter(daytime_wear_hours > 12 * 20) %>% 
+  ggplot() +
+  geom_point(aes(x = hi_pa_prop__NAW, y = hi_pa_prop__AWT, 
+                 size = nonadherent_ratio, color = nonadherent_ratio, alpha = 0.5, 
+                 alpha = 0.5, text = paste("id:", id)))
+)
+```
+
+```{r}
+# at least 20 days
+ggplotly(
+  patient_summary %>% 
+    filter(daytime_wear_hours > 12 * 20) %>% 
+    ggplot(aes(x="", y=low_pa_prop_ratio)) +
+    geom_boxplot() + 
+    geom_jitter(aes(size = nonadherent_ratio, color = nonadherent_ratio, 
+                    alpha = 0.75, text = paste("id:", id))) + 
+    scale_color_viridis()
+)
+```
+
+```{r}
+max_daytime_hours_ <- max(patient_summary$daytime_hours)
+mod <- patient_summary %>% 
+  filter(daytime_hours > 12 * 20) %>% 
+  mutate(w = daytime_hours / max_daytime_hours_) %>% 
+  betareg(daytime_wear_pct ~ hi_pa_prop__DWT, 
+          data = .,
+          weights = w, 
+          link = "logit")
+summary(mod)
+```
+
+```{r}
+post_pred = data.frame(hi_pa_prop__DWT = seq(0,0.3,0.1))
+post_pred$daytime_wear_pct = predict(mod, newdata = post_pred, type = "response")
+
+# at least 20 days
+patient_summary %>% 
+  filter(daytime_hours > 12 * 20) %>% 
+  ggplot() + 
+  geom_point(aes(x = hi_pa_prop__DWT, y = daytime_wear_pct, 
+                 size = daytime_hours, color = daytime_hours, alpha = 0.5, 
+                 text = paste("id:", id))) + 
+  geom_line(data = post_pred, aes(x=hi_pa_prop__DWT, y= daytime_wear_pct))
+```
+
+## daily summary
+
+```{r}
+daily_data <- minute_data %>% 
+  mutate(
+    HR = if_else(is_adherent_wear, HR, as.numeric(NA)), 
+    steps = if_else(is_adherent_wear, steps, as.numeric(NA)), 
+    intensity = if_else(is_adherent_wear, intensity, as.numeric(NA))
+    ) %>% 
+  group_by(id) %>% 
+  mutate(
+    min_date = min(date)
+    ) %>% ungroup() %>% 
+  group_by(id, min_date, date) %>% 
+  summarise(
+    adherent_mins = sum(is_adherent_wear),
+    adherent_hours = round(adherent_mins / 60, digits = 2), 
+    mean_HR = mean(HR, na.rm = T), 
+    sd_HR = sd(HR, na.rm = T), 
+    zero_step_prop = sum(steps == 0, na.rm = T) / adherent_mins,
+    sed_prop = sum(intensity == 0, na.rm = T) / adherent_mins, 
+    lipa_prop = sum(intensity == 1, na.rm = T) / adherent_mins, 
+    mvpa_prop = sum(intensity == 2, na.rm = T) / adherent_mins, 
+    low_pa_prop = sum(intensity < 1, na.rm = T) / adherent_mins, 
+    hi_pa_prop = sum(intensity >= 1, na.rm = T) / adherent_mins
+    ) %>% ungroup() %>% 
+  mutate(index = as.numeric(date - min_date + 1)) %>% 
+  select(
+    id, index, date, adherent_hours, 
+    mean_HR, sd_HR, zero_step_prop, 
+    sed_prop, lipa_prop, mvpa_prop, 
+    low_pa_prop, hi_pa_prop
+    )
+
+daily_data
+```
+
+```{r}
+daily_summary <- daily_data %>% 
+  group_by(id) %>% 
+  summarise(
+    adherent_days = sum(adherent_hours > 0), 
+    mu_HR = mean(mean_HR, na.rm = T), 
+    sd_HR = sd(mean_HR, na.rm = T), 
+    mu_sed_prop = mean(sed_prop, na.rm = T), 
+    sd_sed_prop = sd(sed_prop, na.rm = T), 
+    mu_lipa_prop = mean(lipa_prop, na.rm = T), 
+    sd_lipa_prop = sd(lipa_prop, na.rm = T), 
+    mu_mvpa_prop = mean(mvpa_prop, na.rm = T), 
+    sd_mvpa_prop = sd(mvpa_prop, na.rm = T), 
+    mu_low_pa_prop = mean(low_pa_prop, na.rm = T), 
+    sd_low_pa_prop = sd(low_pa_prop, na.rm = T), 
+    mu_hi_pa_prop = mean(hi_pa_prop, na.rm = T), 
+    sd_hi_pa_prop = sd(hi_pa_prop, na.rm = T), 
+    ) %>% 
+  mutate(
+    sd_error_HR = 1.96 * sd_HR / sqrt(adherent_days),
+    sd_error_sed_prop = 1.96 * sd_sed_prop / sqrt(adherent_days), 
+    sd_error_lipa_prop = 1.96 * sd_lipa_prop / sqrt(adherent_days), 
+    sd_error_mvpa_prop = 1.96 * sd_mvpa_prop / sqrt(adherent_days), 
+    sd_error_low_pa_prop = 1.96 * sd_low_pa_prop / sqrt(adherent_days), 
+    sd_error_hi_pa_prop = 1.96 * sd_hi_pa_prop / sqrt(adherent_days)
+  )
+
+daily_summary
+```
+
+```{r}
+daily_summary %>% 
+  left_join(patient_summary) %>% 
+  mutate(id = as.factor(id), 
+         lo = mu_HR - sd_error_HR, 
+         hi = mu_HR + sd_error_HR, 
+         mu = mu_HR) %>% 
+  ggplot() + 
+  geom_pointrange(aes(x=id, y=mu, ymin=lo, ymax=hi)) +
+  geom_point(aes(x=id, y=mean_HR__AWT), color="blue") +
+  geom_point(aes(x=id, y=mean_HR__NAW), color="red", shape=3) +
+  geom_point(aes(x=id, y=mean_HR__DWT), color="orange", shape=4) +
+  coord_flip() +
+  theme_bw()
+```
+
+```{r}
+patient_summary %>% 
+  mutate(
+    sd_error_HR__AWT = 1.96 * sd_HR__AWT / sqrt(adherent_wear_hours / 24), 
+    sd_error_HR__NAW = 1.96 * sd_HR__NAW / sqrt(nonadherent_wear_hours / 24), 
+    sd_error_HR__DWT = 1.96 * sd_HR__DWT / sqrt(daytime_wear_hours / 24), 
+  ) %>% 
+  left_join(daily_summary) %>% 
+  ggplot() + 
+  geom_pointrange(aes(x=as.factor(id), y=mu_HR, 
+                      ymin=(mu_HR - sd_error_HR), ymax=(mu_HR + sd_error_HR))) +
+  geom_pointrange(aes(x=as.factor(id), y=mean_HR__AWT, 
+                      ymin=(mean_HR__AWT - sd_error_HR__AWT), ymax=(mean_HR__AWT + sd_error_HR__AWT)), 
+                  color="blue", size = 0.25) +
+  geom_pointrange(aes(x=as.factor(id), y=mean_HR__NAW, 
+                      ymin=(mean_HR__NAW - sd_error_HR__NAW), ymax=(mean_HR__NAW + sd_error_HR__NAW)),
+                  color="red", shape=3, size = 0.25) +
+  geom_pointrange(aes(x=as.factor(id), y=mean_HR__DWT, 
+                      ymin=(mean_HR__DWT - sd_error_HR__DWT), ymax=(mean_HR__DWT + sd_error_HR__DWT)),
+                  color="orange", shape=4, size = 0.25) +
+  coord_flip() +
+  theme_bw()
+```
+
+```{r}
+daily_summary %>% 
+  left_join(patient_summary) %>% 
+  mutate(id = as.factor(id), 
+         lo = mu_low_pa_prop - sd_error_low_pa_prop, 
+         hi = mu_low_pa_prop + sd_error_low_pa_prop, 
+         mu = mu_low_pa_prop) %>% 
+  ggplot() + 
+  geom_pointrange(aes(x=id, y=mu, ymin=lo, ymax=hi)) +
+  geom_point(aes(x=id, y=low_pa_prop__AWT), color="blue") +
+  geom_point(aes(x=id, y=low_pa_prop__NAW), color="red", shape=3) +
+  geom_point(aes(x=id, y=low_pa_prop__DWT), color="orange", shape=4) +
+  coord_flip() +
+  theme_bw()
+```
+
+```{r}
+patient_summary %>% 
+  mutate(
+    sd_error__AWT = 1.96 * low_pa_prop__AWT * (1 - low_pa_prop__AWT) / sqrt(adherent_wear_hours / 24), 
+    sd_error__NAW = 1.96 * low_pa_prop__NAW * (1 - low_pa_prop__NAW)  / sqrt(nonadherent_wear_hours / 24), 
+    sd_error__DWT = 1.96 * low_pa_prop__DWT * (1 - low_pa_prop__DWT)  / sqrt(daytime_wear_hours / 60), 
+  ) %>% 
+  left_join(daily_summary) %>% 
+  ggplot() + 
+  # geom_pointrange(aes(x=as.factor(id),
+  #                     y=mu_low_pa_prop,
+  #                     ymin=(mu_low_pa_prop - sd_error_low_pa_prop),
+  #                     ymax=(mu_low_pa_prop + sd_error_low_pa_prop))) +
+  geom_pointrange(aes(x=as.factor(id),
+                      y=low_pa_prop__AWT,
+                      ymin=(low_pa_prop__AWT - sd_error__AWT),
+                      ymax=(low_pa_prop__AWT + sd_error__AWT)),
+                  color="blue") +
+  geom_pointrange(aes(x=as.factor(id), 
+                      y=low_pa_prop__NAW, 
+                      ymin=(low_pa_prop__NAW - sd_error__NAW), 
+                      ymax=(low_pa_prop__NAW + sd_error__NAW)),
+                  color="red", shape=3, size = 0.25) +
+  # geom_pointrange(aes(x=as.factor(id), 
+  #                     y=low_pa_prop__DWT, 
+  #                     ymin=(low_pa_prop__DWT - sd_error__DWT), 
+  #                     ymax=(low_pa_prop__DWT + sd_error__DWT)),
+  #                 color="orange", shape=4, size = 0.25) +
+  coord_flip() +
+  theme_bw()
+```
+
+```{r}
+daily_summary %>% 
+  left_join(patient_summary) %>% 
+  mutate(id = as.factor(id), 
+         lo = mu_hi_pa_prop - sd_error_hi_pa_prop, 
+         hi = mu_hi_pa_prop + sd_error_hi_pa_prop, 
+         mu = mu_hi_pa_prop) %>% 
+  ggplot() + 
+  geom_pointrange(aes(x=id, y=mu, ymin=lo, ymax=hi), size = 0.4) +
+  geom_point(aes(x=id, y=hi_pa_prop__AWT), color="blue", size = 2) +
+  geom_point(aes(x=id, y=hi_pa_prop__NAW), color="red", shape=3, size = 2) +
+  geom_point(aes(x=id, y=hi_pa_prop__DWT), color="orange", shape=4) + 
+  coord_flip() +
+  theme_bw()
+```
+
+```{r}
+patient_summary %>% 
+  mutate(
+    sd_error__AWT = 1.96 * hi_pa_prop__AWT * (1 - hi_pa_prop__AWT) / sqrt(adherent_wear_hours / 24), 
+    sd_error__NAW = 1.96 * hi_pa_prop__NAW * (1 - hi_pa_prop__NAW)  / sqrt(nonadherent_wear_hours / 24), 
+    sd_error__DWT = 1.96 * hi_pa_prop__DWT * (1 - hi_pa_prop__DWT)  / sqrt(daytime_wear_hours / 60), 
+  ) %>% 
+  left_join(daily_summary) %>% 
+  ggplot() + 
+  # geom_pointrange(aes(x=as.factor(id), 
+  #                     y=mu_hi_pa_prop, 
+  #                     ymin=(mu_hi_pa_prop - sd_error_hi_pa_prop), 
+  #                     ymax=(mu_hi_pa_prop + sd_error_hi_pa_prop))) +
+  geom_pointrange(aes(x=as.factor(id),
+                      y=hi_pa_prop__AWT,
+                      ymin=(hi_pa_prop__AWT - sd_error__AWT),
+                      ymax=(hi_pa_prop__AWT + sd_error__AWT)),
+                  color="blue") +
+  geom_pointrange(aes(x=as.factor(id), 
+                      y=hi_pa_prop__NAW, 
+                      ymin=(hi_pa_prop__NAW - sd_error__NAW), 
+                      ymax=(hi_pa_prop__NAW + sd_error__NAW)),
+                  color="red", shape=3, size = 0.25) +
+  # geom_pointrange(aes(x=as.factor(id), 
+  #                     y=hi_pa_prop__DWT, 
+  #                     ymin=(hi_pa_prop__DWT - sd_error__DWT), 
+  #                     ymax=(hi_pa_prop__DWT + sd_error__DWT)),
+  #                 color="orange", shape=4, size = 0.25) +
+  coord_flip() +
+  theme_bw() + 
+  labs()
+```
+
+```{r}
+daily_data__AWT <- minute_data %>% 
+  mutate(
+    type = "adherent_wear", 
+    HR = if_else(is_adherent_wear, HR, as.numeric(NA)), 
+    steps = if_else(is_adherent_wear, steps, as.numeric(NA)), 
+    intensity = if_else(is_adherent_wear, intensity, as.numeric(NA))
+    ) %>% 
+  group_by(id, type, date) %>% 
+  summarise(
+    total_mins = sum(is_adherent_wear),
+    mean_HR = mean(HR, na.rm = T), 
+    sd_HR = sd(HR, na.rm = T), 
+    zero_steps = sum(steps == 0, na.rm = T),
+    sed = sum(intensity == 0, na.rm = T), 
+    lipa = sum(intensity == 1, na.rm = T), 
+    mvpa = sum(intensity == 2, na.rm = T), 
+    active = sum(intensity == 3, na.rm = T), 
+    low_pa = sum(intensity <= 1, na.rm = T), 
+    hi_pa = sum(intensity >= 2, na.rm = T)
+    ) 
+
+daily_data__NAW  <- minute_data %>% 
+  mutate(
+    type = "nonadherent_wear", 
+    HR = if_else(is_nonadherent_wear, HR, as.numeric(NA)), 
+    steps = if_else(is_nonadherent_wear, steps, as.numeric(NA)), 
+    intensity = if_else(is_nonadherent_wear, intensity, as.numeric(NA))
+    ) %>% 
+  group_by(id, type, date) %>% 
+  summarise(
+    total_mins = sum(is_nonadherent_wear),
+    mean_HR = mean(HR, na.rm = T), 
+    sd_HR = sd(HR, na.rm = T), 
+    zero_steps = sum(steps == 0, na.rm = T),
+    sed = sum(intensity == 0, na.rm = T), 
+    lipa = sum(intensity == 1, na.rm = T), 
+    mvpa = sum(intensity == 2, na.rm = T), 
+    active = sum(intensity == 3, na.rm = T), 
+    low_pa = sum(intensity <= 1, na.rm = T), 
+    hi_pa = sum(intensity >= 2, na.rm = T)
+    ) 
+```
+
+```{r}
+xx <- rbind(daily_data__AWT, daily_data__NAW) %>% 
+  select(id, date, type, low_pa, hi_pa) %>% 
+  pivot_longer(cols = c('low_pa', 'hi_pa')) 
+```
+
+```{r}
+id_ = c(15,41,46)
+
+xx %>% 
+  filter(id == id_[1]) %>% 
+  ggplot() +
+  geom_bar(aes(x=date, y=value, fill=name), 
+           stat="identity")  +
+  facet_wrap(~type, nrow=2) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  scale_fill_discrete(type = c("black", "orange")) + 
+  labs(fill = "", y = "physical activity \n stacked minutes in the day", 
+       title = paste("Patient", id_))
+
+xx %>% 
+  filter(id == id_[2]) %>% 
+  ggplot() +
+  geom_bar(aes(x=date, y=value, fill=name), 
+           stat="identity")  +
+  facet_wrap(~type, nrow=2) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  scale_fill_discrete(type = c("black", "orange")) + 
+  labs(fill = "", y = "physical activity \n stacked minutes in the day", 
+       title = paste("Patient", id_))
+
+xx %>% 
+  filter(id == id_[3]) %>% 
+  ggplot() +
+  geom_bar(aes(x=date, y=value, fill=name), 
+           stat="identity")  +
+  facet_wrap(~type, nrow=2) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  scale_fill_discrete(type = c("black", "orange")) + 
+  labs(fill = "", y = "physical activity \n stacked minutes in the day", 
+       title = paste("Patient", id_))
+```

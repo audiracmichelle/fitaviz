@@ -1,0 +1,48 @@
+# emissions
+
+```{r}
+library(tidyverse)
+library(magrittr)
+library(lubridate)
+library(viridis)
+```
+
+```{r}
+emissions <- read_csv("../data/hmm_input/emissions_11.csv")
+emissions %>% 
+  mutate(intensity = if_else(is.na(steps), as.numeric(NA), intensity)) #original intensity values are NA if steps are NA for hmm model steps are set to NA on nonwear
+
+latent <- read_csv("../data/hmm_output/latent_11.csv")
+names(latent) <- c('index', 'latent')
+
+hmm <- cbind(emissions, latent)
+```
+
+```{r}
+hmm %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = as.factor(latent), y = steps)) +
+  geom_jitter(aes(x = as.factor(latent), y = steps, color = HR), alpha = 0.5) + 
+  scale_color_gradientn(colors = c("blue", "yellow", "red"))
+
+hmm %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = as.factor(intensity), y = steps)) +
+  geom_jitter(aes(x = as.factor(intensity), y = steps, color = HR), alpha = 0.5) + 
+  scale_color_gradientn(colors = c("blue", "yellow", "red"))
+```
+
+```{r}
+xx <- hmm %>% 
+  filter(date == as.Date("2020-06-17"))
+
+xx %>% 
+  ggplot()  +
+  geom_line(aes(x = time, y = steps, col = as.factor(latent), group = 1))
+
+xx %>% 
+  ggplot()  +
+  geom_line(aes(x = time, y = steps, col = as.factor(intensity), group = 1))
+  
+```
+
