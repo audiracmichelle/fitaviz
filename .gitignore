@@ -1,5 +1,5 @@
-**/local_data
 .DS_Store
+**/local_data
 
 # History files
 .Rhistory
