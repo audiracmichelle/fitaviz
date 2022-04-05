@@ -1,2 +1,2 @@
-# fitabase_viz
+# fitaviz
 Fitbit data preprocessing and visualization
