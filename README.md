@@ -1,2 +1,2 @@
 # fitabase_viz
-Shinyapp to visualize fitbit batch exports
+Fitbit data preprocessing and visualization
