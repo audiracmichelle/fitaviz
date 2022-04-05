@@ -2,3 +2,5 @@ overview
 methods
 summaries-data-dictionary
 patients_summary.csv
+daily_data.csv
+daily_summary.csv
