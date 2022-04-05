@@ -1,3 +1,6 @@
+.DS_Store
+**/local_data
+
 # History files
 .Rhistory
 .Rapp.history

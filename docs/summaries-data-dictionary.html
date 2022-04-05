@@ -73,6 +73,8 @@
 <li class="chapter" data-level="2" data-path="summaries-data-dictionary.html"><a href="summaries-data-dictionary.html"><i class="fa fa-check"></i><b>2</b> Summaries Data Dictionary<span></span></a>
 <ul>
 <li class="chapter" data-level="2.1" data-path="summaries-data-dictionary.html"><a href="summaries-data-dictionary.html#patients_summary.csv"><i class="fa fa-check"></i><b>2.1</b> patients_summary.csv<span></span></a></li>
+<li class="chapter" data-level="2.2" data-path="summaries-data-dictionary.html"><a href="summaries-data-dictionary.html#daily_data.csv"><i class="fa fa-check"></i><b>2.2</b> daily_data.csv<span></span></a></li>
+<li class="chapter" data-level="2.3" data-path="summaries-data-dictionary.html"><a href="summaries-data-dictionary.html#daily_summary.csv"><i class="fa fa-check"></i><b>2.3</b> daily_summary.csv<span></span></a></li>
 </ul></li>
 </ul>
 
@@ -94,14 +96,276 @@
 <div id="summaries-data-dictionary" class="section level1 hasAnchor" number="2">
 <h1><span class="header-section-number">2</span> Summaries Data Dictionary<a href="summaries-data-dictionary.html#summaries-data-dictionary" class="anchor-section" aria-label="Anchor link to header"></a></h1>
 <ul>
-<li>patients_summary.csv - patient level entries</li>
-<li>daily_data.csv - patient-day level entries</li>
-<li>daily_summary.csv - patient level entries</li>
+<li><strong>patients_summary.csv</strong>
+<ul>
+<li>patient level entries</li>
+<li>summary stats computed for adherent wear time AWT and non-adherent wear NAW</li>
+</ul></li>
+<li><strong>daily_data.csv</strong>
+<ul>
+<li>patient-day level entries</li>
+<li>only adherent days included</li>
+</ul></li>
+<li><strong>daily_summary.csv</strong>
+<ul>
+<li>patient level entries</li>
+<li>summary stats computed only for adherent wear time AWT</li>
+</ul></li>
 </ul>
 <div id="patients_summary.csv" class="section level2 hasAnchor" number="2.1">
 <h2><span class="header-section-number">2.1</span> patients_summary.csv<a href="summaries-data-dictionary.html#patients_summary.csv" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>Summaries describing patient’s wear and activity from <code>min_date</code> to <code>max_date</code>. Following the steps described in <strong>Methods</strong>, daytime wear minutes are labeled and classified as adherent time or non-adherent time. Column names make the distiction between summary statistics that take adherent wear time AWT or that take non-adherent wear NAW.</p>
-<p>Representative daily summaries of activity .</p>
+<p>Summary describing patient’s wear and activity from <code>min_date</code> to <code>max_date</code>. Following the steps described in <strong>Methods</strong>, daytime wear minutes are labeled and classified as adherent time or non-adherent time. Summary stats are computed across all the patient’s adherent wear time AWT or non-adherent wear NAW, column names make the distinction.</p>
+<table>
+<colgroup>
+<col width="1%" />
+<col width="20%" />
+<col width="78%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Column name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>id</td>
+<td>Patient id.</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>min_date</td>
+<td>Patient’s first day in the study (or data export).</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>max_date</td>
+<td>Patient’s last day in the study (or data export).</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>daytime_hours</td>
+<td>Total number of daytime hours (between 8am and 8pm) in the study.</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>wear_daytime_hours</td>
+<td>Total number of daytime wear minutes (minutes with non-missing HR and non-missing step) aggregated in hours.</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>adherent_wear_hours</td>
+<td>Total number of daytime minutes that are adherent aggregated in hours.</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td>nonadh_wear_hours</td>
+<td>Total number of daytime minutes that are non-adherent aggregated in hours.</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td>daytime_wear_pct</td>
+<td>Proportion of weartime in the study during daytime.</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td>nonadherent_ratio</td>
+<td>Ratio of total non-adherent over adherent time.</td>
+</tr>
+<tr class="even">
+<td>10</td>
+<td>min_HR__&lt;AWT, NAW&gt;</td>
+<td>Patient’s minimum HR per minute value (average) within the adherent weartime (AWT) or non-adherent weartime (NAW).</td>
+</tr>
+<tr class="odd">
+<td>11</td>
+<td>max_HR__&lt;AWT, NAW&gt;</td>
+<td>Patient’s maximum HR per minute value (average) within the adherent weartime (AWT) or non-adherent weartime (NAW) minutes.</td>
+</tr>
+<tr class="even">
+<td>12</td>
+<td>mean_HR__&lt;AWT, NAW&gt;</td>
+<td>Patient’s mean HR per minute value (average) within the adherent weartime (AWT) or non-adherent weartime (NAW) minutes.</td>
+</tr>
+<tr class="odd">
+<td>13</td>
+<td>max_pos_steps__&lt;AWT, NAW&gt;</td>
+<td>Patient’s maximum number of steps per minute (count) within the adherent weartime (AWT) or non-adherent weartime (NAW).</td>
+</tr>
+<tr class="even">
+<td>14</td>
+<td>mean_pos_steps__&lt;AWT, NAW&gt;</td>
+<td>Patient’s average number of steps per minute (count) within the adherent weartime (AWT) or non-adherent weartime (NAW).</td>
+</tr>
+<tr class="odd">
+<td>15</td>
+<td>zero_steps_prop__&lt;AWT, NAW&gt;</td>
+<td>Proportion of minutes with zero steps within the adherent weartime (AWT) or non-adherent weartime (NAW).</td>
+</tr>
+<tr class="even">
+<td>16</td>
+<td>sedentary_prop__&lt;AWT, NAW&gt;</td>
+<td>Proportion of sedentary minutes within the adherent weartime (AWT) or non-adherent weartime (NAW).</td>
+</tr>
+<tr class="odd">
+<td>17</td>
+<td>light_prop__&lt;AWT, NAW&gt;</td>
+<td>Proportion of light activity minutes within the adherent weartime (AWT) or non-adherent weartime (NAW).</td>
+</tr>
+<tr class="even">
+<td>18</td>
+<td>moderate_prop__&lt;AWT, NAW&gt;</td>
+<td>Proportion of moderate activity minutes within the adherent weartime (AWT) or non-adherent weartime (NAW).</td>
+</tr>
+<tr class="odd">
+<td>19</td>
+<td>active_prop__&lt;AWT, NAW&gt;</td>
+<td>Proportion of active activity minutes within the adherent weartime (AWT) or non-adherent weartime (NAW).</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="daily_data.csv" class="section level2 hasAnchor" number="2.2">
+<h2><span class="header-section-number">2.2</span> daily_data.csv<a href="summaries-data-dictionary.html#daily_data.csv" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>This summary contains per-day values across adherent days.</p>
+<table>
+<colgroup>
+<col width="2%" />
+<col width="16%" />
+<col width="81%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Column name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>id</td>
+<td>Patient’s id.</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>date</td>
+<td>Date.</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>index</td>
+<td>Number of days since first day in study (or since first date in the data export).</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>adherent_hours</td>
+<td>Total number of adherent minutes in `date` aggregated to hours.</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>mean_HR</td>
+<td>Average HR of adherent weartime minutes in `date`.</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>sd_HR</td>
+<td>HR’s standard dev of adherent weartime minutes in `date`.</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td>zero_step_prop</td>
+<td>Proportion of adherent weartime minutes in `date` with zero steps.</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td>sedentary_prop</td>
+<td>Proportion of adherent weartime minutes in `date` with sedentary activity.</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td>light_prop</td>
+<td>Proportion of adherent weartime minutes in `date` with light activity.</td>
+</tr>
+<tr class="even">
+<td>10</td>
+<td>moderate_prop</td>
+<td>Proportion of adherent weartime minutes in `date` with moderate activity.</td>
+</tr>
+<tr class="odd">
+<td>11</td>
+<td>active_prop</td>
+<td>Proportion of adherent weartime minutes in `date` with active activity.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="daily_summary.csv" class="section level2 hasAnchor" number="2.3">
+<h2><span class="header-section-number">2.3</span> daily_summary.csv<a href="summaries-data-dictionary.html#daily_summary.csv" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Patients’ summary statistics of daily physical activity in adherent days.</p>
+<table>
+<colgroup>
+<col width="0%" />
+<col width="19%" />
+<col width="79%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Column name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>id</td>
+<td>Patient’s id.</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>mu_sedentary_prop</td>
+<td>Daily average (sample mean estimate) of the proportion of adherent weartime spent in sedentary activity.</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>mu_light_prop</td>
+<td>Daily average (sample mean estimate) of the proportion of adherent weartime spent in light activity.</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>mu_moderate_prop</td>
+<td>Daily average (sample mean estimate) of the proportion of adherent weartime spent in moderate activity.</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>mu_active_prop</td>
+<td>Daily average (sample mean estimate) of the proportion of adherent weartime spent in active activity.</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>sd_error_sedentary_prop</td>
+<td>Standard error (of the sample mean) of the proportion of adherent weartime spent in sedentary activity.</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td>sd_error_light_prop</td>
+<td>Standard error (of the sample mean) of the proportion of adherent weartime spent in light activity.</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td>sd_error_moderate_prop</td>
+<td>Standard error (of the sample mean) of the proportion of adherent weartime spent in moderate activity.</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td>sd_error_active_prop</td>
+<td>Standard error (of the sample mean) of the proportion of adherent weartime spent in active activity.</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 </div>
