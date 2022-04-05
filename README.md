@@ -1,2 +1,2 @@
 # fitabase_viz
-Shinyapp to visualize fitabase batch exports
+Shinyapp to visualize fitbit batch exports
