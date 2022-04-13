@@ -1,0 +1,96 @@
+---
+title: "Fitaviz"
+author: " "
+site: bookdown::bookdown_site
+documentclass: book
+output:
+  bookdown::gitbook: default
+  #bookdown::pdf_book: default
+---
+
+# Overview
+
+We derive steps from published methods to process, visualize and extract activity summary statistics from Fitbit data. The focus is on adequately capturing activity patterns that ultimately support epidemiological findings.
+
+## Methods
+
+Extensive use of accelerometers in health research has led to some level of agreement of which issues processing of epoch accelerometer values should address, most notably how to determine non-wear time and what constitutes a valid or adherent day. We collect processing decisions from the literature, mostly approaches widely adopted for ActiGraph's activity counts, and illustrate their application on Fitbit's steps and HR minute data.
+
+* **Wear-time** non-wear detection with activity counts is typically based on the length of periods of low acceleration. As for FitBit, minutes with non-empty HR and non-empty steps are labeled as wear-time. Wear minutes between 8am and 8pm are summed across each day to obtain daytime wear.
+* **Adherent day** to account for potential wear-time diurnal bias, adherent days are days with at least 10 hours of daytime wear. Adherent time refers to wear minutes within an adherent day.
+
+**Fig. 1** Depiction of daytime wear. For each day, wear minutes are aggregated according to their physical activity classification. Fitbit's proprietary algorithm classifies each minute in four activity-levels: sedentary, light, moderate and vigorous. The first panel shows daily total counts in adherent and non-adherent days, the second panel shows the derived proportion of time spent in each activity-level.
+
+![On adherent days the proportions of time spent in each activity-level are representative of diurnal activity, and are likely misrepresentations of activity on non-adherent days.](./img/adherent_activity.png)
+
+# Summaries Data Dictionary
+
+* **patients_summary.csv** 
+  + patient level entries
+  + summary stats computed for adherent wear time AWT and non-adherent wear NAW
+* **daily_data.csv**
+  + patient-day level entries
+  + summary stats computed only for adherent wear time AWT
+* **daily_summary.csv**
+  + patient level entries
+  + summary stats of adherent day values
+
+## patients_summary.csv
+
+Summary describing patient's wear and activity from `min_date` to `max_date`. Following the steps described in **Methods**, daytime wear minutes are labeled and classified as adherent time or non-adherent time. Summary stats are computed across all the patient's adherent wear time AWT or non-adherent wear NAW, column names make the distinction. 
+
+|    | Column name                     | Description                                                                                                                |
+| -- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 1  | id                              | Patient id.                                                                                                                |
+| 2  | min\_date                       | Patient’s first day in the study (or data export).                                                                         |
+| 3  | max\_date                       | Patient’s last day in the study (or data export).                                                                          |
+| 4  | daytime\_hours                  | Total number of daytime hours (between 8am and 8pm) in the study.                                                          |
+| 5  | daytime\_wear\_hours            | Total number of daytime wear minutes (minutes with non-missing HR and non-missing step) aggregated in hours.               |
+| 6  | adherent\_wear\_hours           | Total number of daytime minutes that are adherent aggregated in hours.                                                     |
+| 7  | nonadherent\_wear\_hours        | Total number of daytime minutes that are non-adherent aggregated in hours.                                                 |
+| 8  | daytime\_wear\_pct              | Proportion of weartime in the study during daytime.                                                                        |
+| 9  | nonadherent\_ratio              | Ratio of total non-adherent over adherent time.                                                                            |
+| 10 | min\_HR\_\_<AWT, NAW>           | Patient’s minimum HR per minute value (average) within the adherent weartime (AWT) or non-adherent weartime (NAW).         |
+| 11 | max\_HR\_\_<AWT, NAW>           | Patient’s maximum HR per minute value (average) within the adherent weartime (AWT) or non-adherent weartime (NAW) minutes. |
+| 12 | mean\_HR\_\_<AWT, NAW>          | Patient’s mean HR per minute value (average) within the adherent weartime (AWT) or non-adherent weartime (NAW) minutes.    |
+| 13 | max\_pos\_steps\_\_<AWT, NAW>   | Patient’s maximum number of steps per minute (count) within the adherent weartime (AWT) or non-adherent weartime (NAW).    |
+| 14 | mean\_pos\_steps\_\_<AWT, NAW>  | Patient’s average number of steps per minute (count) within the adherent weartime (AWT) or non-adherent weartime (NAW).    |
+| 15 | zero\_steps\_prop\_\_<AWT, NAW> | Proportion of minutes with zero steps within the adherent weartime (AWT) or non-adherent weartime (NAW).                   |
+| 16 | sedentary\_prop\_\_<AWT, NAW>   | Proportion of sedentary minutes within the adherent weartime (AWT) or non-adherent weartime (NAW).                         |
+| 17 | light\_prop\_\_<AWT, NAW>       | Proportion of light activity minutes within the adherent weartime (AWT) or non-adherent weartime (NAW).                    |
+| 18 | moderate\_prop\_\_<AWT, NAW>    | Proportion of moderate activity minutes within the adherent weartime (AWT) or non-adherent weartime (NAW).                 |
+| 19 | active\_prop\_\_<AWT, NAW>      | Proportion of active activity minutes within the adherent weartime (AWT) or non-adherent weartime (NAW).                   |
+
+## daily_data.csv
+
+This summary contains per-day values across adherent days.
+
+|    | Column name      | Description                                                                       |
+| -- | ---------------- | --------------------------------------------------------------------------------- |
+| 1  | id               | Patient’s id.                                                                     |
+| 2  | date             | Date.                                                                             |
+| 3  | index            | Number of days since first day in study (or since first date in the data export). |
+| 4  | adherent\_mins   | Total number of adherent minutes in \`date\`.                 |
+| 5  | mean\_HR         | Average HR of adherent weartime minutes in \`date\`.                              |
+| 6  | sd\_HR           | HR’s standard dev of adherent weartime minutes in \`date\`.                       |
+| 7  | zero\_step\_prop | Proportion of adherent weartime minutes in \`date\` with zero steps.              |
+| 8  | sedentary\_prop  | Proportion of adherent weartime minutes in \`date\` with sedentary activity.      |
+| 9  | light\_prop      | Proportion of adherent weartime minutes in \`date\` with light activity.          |
+| 10 | moderate\_prop   | Proportion of adherent weartime minutes in \`date\` with moderate activity.       |
+| 11 | active\_prop     | Proportion of adherent weartime minutes in \`date\` with active activity.         |
+
+## daily_summary.csv
+
+Patients’ summary statistics of daily physical activity in adherent days.
+
+|   | Column name                | Description                                                                                              |
+| - | -------------------------- | -------------------------------------------------------------------------------------------------------- |
+| 1 | id                         | Patient’s id.                                                                                            |
+| 2 | mu\_sedentary\_prop        | Daily average (sample mean estimate) of the proportion of adherent weartime spent in sedentary activity. |
+| 3 | mu\_light\_prop            | Daily average (sample mean estimate) of the proportion of adherent weartime spent in light activity.     |
+| 4 | mu\_moderate\_prop         | Daily average (sample mean estimate) of the proportion of adherent weartime spent in moderate activity.  |
+| 5 | mu\_active\_prop           | Daily average (sample mean estimate) of the proportion of adherent weartime spent in active activity.    |
+| 6 | sd\_error\_sedentary\_prop | Standard error (of the sample mean) of the proportion of adherent weartime spent in sedentary activity.  |
+| 7 | sd\_error\_light\_prop     | Standard error (of the sample mean) of the proportion of adherent weartime spent in light activity.      |
+| 8 | sd\_error\_moderate\_prop  | Standard error (of the sample mean) of the proportion of adherent weartime spent in moderate activity.   |
+| 9 | sd\_error\_active\_prop    | Standard error (of the sample mean) of the proportion of adherent weartime spent in active activity.     |

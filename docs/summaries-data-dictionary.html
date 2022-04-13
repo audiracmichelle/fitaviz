@@ -104,12 +104,12 @@
 <li><strong>daily_data.csv</strong>
 <ul>
 <li>patient-day level entries</li>
-<li>only adherent days included</li>
+<li>summary stats computed only for adherent wear time AWT</li>
 </ul></li>
 <li><strong>daily_summary.csv</strong>
 <ul>
 <li>patient level entries</li>
-<li>summary stats computed only for adherent wear time AWT</li>
+<li>summary stats of adherent day values</li>
 </ul></li>
 </ul>
 <div id="patients_summary.csv" class="section level2 hasAnchor" number="2.1">
@@ -151,7 +151,7 @@
 </tr>
 <tr class="odd">
 <td>5</td>
-<td>wear_daytime_hours</td>
+<td>daytime_wear_hours</td>
 <td>Total number of daytime wear minutes (minutes with non-missing HR and non-missing step) aggregated in hours.</td>
 </tr>
 <tr class="even">
@@ -161,7 +161,7 @@
 </tr>
 <tr class="odd">
 <td>7</td>
-<td>nonadh_wear_hours</td>
+<td>nonadherent_wear_hours</td>
 <td>Total number of daytime minutes that are non-adherent aggregated in hours.</td>
 </tr>
 <tr class="even">
@@ -261,8 +261,8 @@
 </tr>
 <tr class="even">
 <td>4</td>
-<td>adherent_hours</td>
-<td>Total number of adherent minutes in `date` aggregated to hours.</td>
+<td>adherent_mins</td>
+<td>Total number of adherent minutes in `date`.</td>
 </tr>
 <tr class="odd">
 <td>5</td>
