@@ -15,15 +15,16 @@ get_consecutive_ids <- function(x) {
 }
 tf = reticulate::import('tf')
 
-data <- readRDS("../data/preprocess_minute_data_1.RDS")
+data <- readRDS("../dev_1/data/features_data.RDS")
+data$pred <- readRDS("../dev_1/models/lm_ber/predict/pred.rds")
 
 data %<>%
-  mutate(id = as.character(id), 
-         hour = hour(time), 
+  mutate(hour = hour(time), 
          weekday = wday(date, label = TRUE), 
          eight_to_eight = (hour >= 8) & (hour < 20), 
          steps_is_zero = (steps == 0), 
-         steps_is_zero = if_else(is.na(steps_is_zero), FALSE, steps_is_zero))
+         steps_is_zero = if_else(is.na(steps_is_zero), FALSE, steps_is_zero), 
+         pred = if_else(is.na(pred), !(is.na(HR) | is.na(steps)), pred))
 
 shinyServer(function(input, output, session) {
   
@@ -36,6 +37,10 @@ shinyServer(function(input, output, session) {
     if(input$nonwear == "missing_HR") {
       minute_data <- data %>% 
         mutate(weartime = !(is.na(HR) | is.na(steps)))
+    }
+    if(input$nonwear == "pred") {
+      minute_data <- data %>% 
+        mutate(weartime = pred)
     }
     #eight_to_eight
     if(input$eight_to_eight == "on") {
@@ -222,10 +227,14 @@ shinyServer(function(input, output, session) {
     reactive_data()$daily_data %>% 
       filter(adherent_day) %>% 
       group_by(id) %>% 
-      summarise(sedentary_prop_mu = round(mean(sedentary_prop), digits=2), 
-                lipa_prop_mu = round(mean(lipa_prop), digits=2), 
-                mvpa_prop_mu = round(mean(mvpa_prop), digits=2),
-                sedentary_bout_mu = round(mean(sedentary_bout_mean), digits=2)) 
+      summarise(sedentary_prop_mu = 
+                  round(mean(sedentary_prop, na.rm = TRUE), digits=2), 
+                lipa_prop_mu = 
+                  round(mean(lipa_prop, na.rm = TRUE), digits=2), 
+                mvpa_prop_mu = 
+                  round(mean(mvpa_prop, na.rm = TRUE), digits=2),
+                sedentary_bout_mu = 
+                  round(mean(sedentary_bout_mean, na.rm = TRUE), digits=2)) 
   }, 
   rownames= FALSE, 
   colnames = c("id",

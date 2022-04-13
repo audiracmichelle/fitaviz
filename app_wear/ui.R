@@ -10,10 +10,11 @@ dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       radioButtons(inputId = "nonwear",
-                   label = "Nonwear: missing steps and ",
+                   label = "Nonwear: (missing steps and) ",
                    choices = c(
                      "missing HR" = "missing_HR", 
-                     "missing HR along zero steps" = "missing_HR_zero_steps"
+                     "missing HR along zero steps" = "missing_HR_zero_steps",
+                     "predicted" = "pred"
                    ),
                    selected = 'missing_HR'), 
       radioButtons(inputId = "eight_to_eight",
