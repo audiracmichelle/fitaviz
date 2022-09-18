@@ -1,2 +1,2 @@
 # fitaviz
- Fitbit data manipulation for epidemiological and clinical studies.
+ Fitbit data manipulation tool for epidemiological and clinical studies.
