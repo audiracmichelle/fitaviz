@@ -42,7 +42,8 @@ body <- dashboardBody(
       )
     ),
     tabItem(
-      tabName = "tab_exploration",
+      tabName = "tab_exploration", 
+      h2("raw data exploration"), 
       fluidPage(
         tabBox(
           title = "",
@@ -51,17 +52,65 @@ body <- dashboardBody(
             "Missing values",
             plotOutput("missingness")
           )
+        ), 
+        tabBox(
+          title = "",
+          width=12,
+          tabPanel(
+            "Intensity Levels",
+            plotOutput("scatter")
+          )
         )
       )
     ),
-    tabItem(tabName = "tab_processing",
-            h2("processing decisions")
+    tabItem(
+      tabName = "tab_processing",
+      h2("processing decisions"), 
+      fluidPage(
+        tabBox(
+          title = "",
+          width=12,
+          tabPanel(
+            "Wear heatmap",
+            plotOutput("wear_heatmap")
+          )
+        ), 
+        tabBox(
+          title = "",
+          width=12,
+          tabPanel(
+            "Time Use",
+            plotOutput("time_use")
+          )
+        )
+      )
     ),
-    tabItem(tabName = "tab_summaries",
-            h2("pa summaries")
+    tabItem(
+      tabName = "tab_summaries",
+      h2("pa summaries"), 
+      fluidPage(
+        box(
+          title = "Basic summary",
+          width=12,
+          plotOutput("basic_summary")
+        ), 
+        box(
+          title = "Sedentary Behavior",
+          width=12,
+          plotOutput("sedentary_behavior_summary")
+        ), 
+        box(
+          title = "Time Use",
+          width=12,
+          plotOutput("time_use_summary")
+        )
+      )
     ),
-    tabItem(tabName = "tab_downloads",
-            h2("downloads")
+    tabItem(
+      tabName = "tab_downloads",
+      h2("downloads"),
+      downloadButton("daily_data", "Daily data"), 
+      downloadButton("daily_summary", "Daily summary")
     )
   )
 )
