@@ -18,4 +18,6 @@ devtools::install_github("audiracmichelle/fitibble")
 
 * If you haven't done it yet, install the required packages. In most cases a yellow message box will appear at the top of RStudio's source pane indicating the packages that are missing.
 
-* `fitaviz` will start after you click the Run App button at the top right of the source pane.
+* Click the Run App button at the top right of the source pane. The `fitaviz` home window will pop .
+
+![](./images/home.png)
