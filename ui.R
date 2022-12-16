@@ -2,8 +2,9 @@
 
 library(shiny)
 library(shinydashboard)
-library(shinydashboardPlus)
-library(plotly)
+library(tidyverse)
+library(magrittr)
+library(fitibble)
 
 options(shiny.maxRequestSize = 750*1024^2) #750MB=750*1024^2
 

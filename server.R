@@ -1,8 +1,5 @@
 # server
 
-library(readr)
-library(fitibble)
-
 function(input, output) {
   reactive_list <- reactiveValues(
     upload_message = "Upload a fitabase zip file. Please wait while\nfitaviz finishes preparing the dataset for analysis."
