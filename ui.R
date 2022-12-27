@@ -1,7 +1,7 @@
-# ui
-
 library(shiny)
 library(shinydashboard)
+library(shinycssloaders)
+library(shinyWidgets)
 library(tidyverse)
 library(magrittr)
 library(fitibble)
@@ -20,7 +20,30 @@ header <- dashboardHeader(
 #### ####
 sidebar <- dashboardSidebar(
   sidebarMenu(
-    menuItemOutput("menu")
+    id = "tabs",
+    menuItemOutput("menu"), 
+    conditionalPanel(
+      condition = "input.tabs == 'tab_processing' || input.tabs == 'tab_summaries'",
+      radioButtons(inputId = "nonwear",
+                   label = "Nonwear method",
+                   choices = c(
+                     "Missing HR" = "missing_HR", 
+                     "Missing HR along zero steps" = "missing_HR_zero_steps",
+                     "Choi on HR" = "choi_HR",
+                     "Choi on steps" = "choi_steps", 
+                     "None" = "none"
+                   )), 
+      sliderInput(inputId = "hours_between", 
+                  label = "Adherent hours between", 
+                  min = 0, 
+                  max = 24, 
+                  value = c(8, 20), 
+                  step = 1), 
+      radioButtons(inputId = "valid_day_method",
+                   label = "Valid day method",
+                   choices = c("Valid adherent hours" = "valid_adherent_hours",
+                               "Valid step count" = "valid_step_count"))
+    )
   )
 )
 
@@ -35,23 +58,30 @@ body <- dashboardBody(
         box(
           width=12, 
           headerBorder = FALSE, 
-          fileInput("zip", "Fitabase zip file", accept = ".zip"),
-          verbatimTextOutput("upload_message"), 
-          verbatimTextOutput("upload_status")
+          fileInput("zip", "Fitabase zip file", accept = ".zip")
         ), 
-        dataTableOutput("timePeriod")
+        #verbatimTextOutput("upload_status"),
+        shinycssloaders::withSpinner(dataTableOutput("time_period"))
       )
     ),
     tabItem(
       tabName = "tab_exploration", 
-      h2("raw data exploration"), 
+      h2("Raw data exploration"), 
       fluidPage(
+        box(
+          title = "Participants", 
+          width=12, 
+          selectizeInput(inputId = "exploration_participants",
+                         label = 'Choose a maximum of 10 participants to plot.', 
+                         choices = NULL, 
+                         options = list(minItems = 1, maxItems = 10))
+        ),
         tabBox(
           title = "",
           width=12,
           tabPanel(
             "Missing values",
-            plotOutput("missingness")
+            shinycssloaders::withSpinner(plotOutput("missingness"))
           )
         ), 
         tabBox(
@@ -59,117 +89,80 @@ body <- dashboardBody(
           width=12,
           tabPanel(
             "Intensity Levels",
-            plotOutput("scatter")
+            shinycssloaders::withSpinner(plotOutput("scatter"))
           )
         )
       )
     ),
     tabItem(
       tabName = "tab_processing",
-      h2("processing decisions"), 
+      h2("Processing decisions"), 
       fluidPage(
+        box(
+          title = "Participants", 
+          width=12, 
+          selectizeInput(inputId = "processing_participants",
+                         label = 'Choose a maximum of 10 participants to plot.', 
+                         choices = NULL, 
+                         options = list(minItems = 1, maxItems = 10))
+        ),
         tabBox(
           title = "",
           width=12,
           tabPanel(
             "Wear heatmap",
-            plotOutput("wear_heatmap")
+            shinycssloaders::withSpinner(plotOutput("wear_heatmap"))
           )
-        ), 
+        ),
         tabBox(
           title = "",
           width=12,
           tabPanel(
             "Time Use",
-            plotOutput("time_use")
+            shinycssloaders::withSpinner(plotOutput("time_use"))
           )
         )
       )
     ),
     tabItem(
       tabName = "tab_summaries",
-      h2("pa summaries"), 
+      h2("PA summaries"), 
       fluidPage(
         box(
           title = "Basic summary",
           width=12,
-          plotOutput("basic_summary")
+          shinycssloaders::withSpinner(plotOutput("basic_summary"))
         ), 
         box(
           title = "Sedentary Behavior",
           width=12,
-          plotOutput("sedentary_behavior_summary")
+          shinycssloaders::withSpinner(plotOutput("sedentary_behavior_summary"))
         ), 
         box(
           title = "Time Use",
           width=12,
-          plotOutput("time_use_summary")
+          shinycssloaders::withSpinner(plotOutput("time_use_summary"))
         )
       )
     ),
     tabItem(
       tabName = "tab_downloads",
-      h2("downloads"),
-      downloadButton("daily_data", "Daily data"), 
-      downloadButton("daily_summary", "Daily summary")
+      h2("Downloads"), 
+      fluidPage(
+        box(
+          title = "Daily data summary",
+          width=6,
+          downloadButton("daily_data", "Daily data")
+        ), 
+        box(
+          title = "Daily summary",
+          width=6,
+          downloadButton("daily_summary", "Daily summary")
+        )
+      )
     )
   )
 )
-
-# 
-# body <- dashboardBody(
-#   fluidPage(
-#     box(
-#       title = "Data Preparation",
-#       width=12,
-#       collapsible = T,
-#       tabBox(
-#         title = "",
-#         width=12,
-#         tabPanel("",
-#                  verbatimTextOutput("message"),
-#                  verbatimTextOutput("test")
-#         ),
-#         tabPanel("Missing values",
-#                  plotOutput("missingness")
-#         ),
-#         tabPanel("Participant's ID summary",
-#                  dataTableOutput("timePeriod")
-#         )
-#       )
-#     ),
-#     box(
-#       title = "Data Exploration",
-#       width=12,
-#       collapsible = T,
-#       tabBox(
-#         title = "",
-#         width=12,
-#         tabPanel("",
-#                  "xxx"
-#         ),
-#         tabPanel("Intensity levels",
-#                  plotOutput("intensity_scatter")
-#         )
-#       )
-#     ),
-#     box(
-#       title = "PA summaries",
-#       width=12,
-#       collapsible = T,
-#       tabBox(
-#         title = "",
-#         width=12,
-#         tabPanel("Tab1",
-#                  "Tab content 1"
-#         ),
-#         tabPanel("Tab2",
-#                  "Tab content 2"
-#         )
-#       )
-#     )
-#   )
-# )
 
 #### ####
 # page
