@@ -1,16 +1,7 @@
-# server
-
 function(input, output) {
-  reactive_list <- reactiveValues(
-    upload_message = "Upload a fitabase zip file. Please wait while\nfitaviz finishes preparing the dataset for analysis."
-  )
-
-  output$upload_message <- renderText({
-    reactive_list$upload_message
-  })
   
   output$menu <- renderMenu({
-    if(!reactive_list$upload_message == "") {
+    if(nrow(minute_data()) == 0) {
       sidebarMenu(
         menuItem(
           "Compartment 1", 
@@ -40,47 +31,85 @@ function(input, output) {
       )
     }
   })
+
+  minute_data <- reactiveVal(tibble())
+  #upload_message <- reactiveVal("Upload a fitabase zip file.")
   
-  reactive_data <- reactive({
+  #output$upload_status <- renderText({upload_message()})
+  
+  output$time_period <- renderDataTable({
     zip_path <- req(input$zip$datapath)
-    reactive_list$upload_message <- ""
-    reactive_data <- list()
     
-    reactive_data$upload_status = "The analysis dataset is ready."
-
-    ####
-    # read files
-    ####
-    #zip_path <- "/Users/audiracmichelle/GitHub/audiracmichelle/fitbit/data/input/test.zip"
+    # withProgress(
+    #   message = 'Fitaviz is preparing the data',
+    #   {
+    #     fitabase_files <- read_fitabase_files(zip_path)
+    #     incProgress(0.4)
+    #     time_period <- fitabase_files$time_period
+    #     minute_data(prep_minute_data(fitabase_files))
+    #     incProgress(0.5)
+    #     rm(fitabase_files)
+    #     #upload_message("")
+    #   }
+    # )
+    
     fitabase_files <- read_fitabase_files(zip_path)
-    reactive_data$timePeriod <- fitabase_files$time_period
-    reactive_data$minute_data <- prep_minute_data(fitabase_files)
+    time_period <- fitabase_files$time_period
+    minute_data(prep_minute_data(fitabase_files))
     rm(fitabase_files)
-    reactive_data$fitibble <- fitibble(reactive_data$minute_data)
-    reactive_data$daily_summary <- prep_daily_summary(reactive_data$fitibble)
-
-    reactive_data
-  })
-
-  output$upload_status <- renderText({
-    reactive_data()$upload_status
-  })
-
-  output$timePeriod <- renderDataTable({
-    reactive_data()$timePeriod %>%
+    
+    participants <- time_period$id
+    updateSelectizeInput(inputId = "exploration_participants",
+                         choices = participants,
+                         selected = participants[1:min(5, length(participants))])
+    updateSelectizeInput(inputId = "processing_participants",
+                         choices = participants,
+                         selected = participants[1:min(5, length(participants))])
+    
+    time_period %>%
       select(id, label, min_time, max_time, is_valid_time_period)
   })
   
+  reactive_data <- reactive({
+    reactive_data <- list()
+    
+    reactive_data$fitibble <- fitibble(
+      minute_data(), 
+      nonwear_method = input$nonwear, 
+      adherent_args = list(hours_between = input$hours_between),
+      valid_day_method = input$valid_day_method
+    )
+    reactive_data$daily_summary <- prep_daily_summary(reactive_data$fitibble)
+    
+    reactive_data
+  })
+  
+  observeEvent(input$exploration_participants, {
+    updateSelectizeInput(inputId = "processing_participants", 
+                         selected = input$exploration_participants)
+  })
+  
+  observeEvent(input$processing_participants, {
+    updateSelectizeInput(inputId = "exploration_participants", 
+                         selected = input$processing_participants)
+  })
+  
   output$missingness <- renderPlot({
-    plot_missingness(reactive_data()$minute_data)
+    minute_data() %>% 
+      filter(id %in% input$exploration_participants) %>% 
+      plot_missingness()
   })
   
   output$scatter <- renderPlot({
-    plot_intensity_scatter(reactive_data()$fitibble)
+    reactive_data()$fitibble %>% 
+      filter(id %in% input$exploration_participants) %>% 
+      plot_intensity_scatter()
   })
   
   output$wear_heatmap <- renderPlot({
-    plot_wear_heatmap(reactive_data()$fitibble)
+    reactive_data()$fitibble %>% 
+      filter(id %in% input$exploration_participants) %>% 
+      plot_wear_heatmap()
   })
   
   output$time_use <- renderPlot({
@@ -112,5 +141,5 @@ function(input, output) {
       readr::write_csv(reactive_data()$daily_summary, file)
     }
   )
-
+  
 }
