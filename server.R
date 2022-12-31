@@ -73,11 +73,17 @@ function(input, output) {
   reactive_data <- reactive({
     reactive_data <- list()
     
+    if(input$valid_day_method == "valid_adherent_hours")
+      valid_day_args <- list(minimum_adherent_hours = input$minimum_adherent_hours)
+    if(input$valid_day_method == "valid_step_count")
+      valid_day_args <- list(minimum_step_count = input$minimum_step_count)
+    
     reactive_data$fitibble <- fitibble(
       minute_data(), 
       nonwear_method = input$nonwear, 
       adherent_args = list(hours_between = input$hours_between),
-      valid_day_method = input$valid_day_method
+      valid_day_method = input$valid_day_method, 
+      valid_day_args = valid_day_args
     )
     reactive_data$daily_summary <- prep_daily_summary(reactive_data$fitibble)
     
@@ -93,6 +99,7 @@ function(input, output) {
     updateSelectizeInput(inputId = "exploration_participants", 
                          selected = input$processing_participants)
   })
+  
   observeEvent(input$intraday_participant, {
     updateDateInput(
       inputId = "intraday_date",
