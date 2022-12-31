@@ -1,7 +1,7 @@
 function(input, output) {
   
   output$menu <- renderMenu({
-    if(nrow(minute_data()) == 0) {
+    if(nrow(time_period()) == 0) {
       sidebarMenu(
         menuItem(
           "Compartment 1", 
@@ -10,6 +10,29 @@ function(input, output) {
         )
       )
     } else {
+      participants <- time_period()$id
+      updateSelectizeInput(
+        inputId = "exploration_participants",
+        choices = participants,
+        selected = participants[1:min(5, length(participants))]
+      )
+      updateSelectizeInput(
+        inputId = "processing_participants",
+        choices = participants,
+        selected = participants[1:min(5, length(participants))]
+      )
+      updateSelectInput(
+        inputId = "intraday_participant",
+        choices = participants,
+        selected = participants[1]
+      )
+      updateDateInput(
+        inputId = "intraday_date",
+        value = as.Date(time_period()$min_time[time_period()$id == participants[1]]),
+        min = as.Date(time_period()$min_time[time_period()$id == participants[1]]),
+        max = as.Date(time_period()$max_time[time_period()$id == participants[1]])
+      )
+      
       sidebarMenu(
         menuItem(
           "Compartment 1",
@@ -33,40 +56,17 @@ function(input, output) {
   })
 
   minute_data <- reactiveVal(tibble())
-  #upload_message <- reactiveVal("Upload a fitabase zip file.")
-  
-  #output$upload_status <- renderText({upload_message()})
+  time_period <- reactiveVal(tibble())
   
   output$time_period <- renderDataTable({
     zip_path <- req(input$zip$datapath)
     
-    # withProgress(
-    #   message = 'Fitaviz is preparing the data',
-    #   {
-    #     fitabase_files <- read_fitabase_files(zip_path)
-    #     incProgress(0.4)
-    #     time_period <- fitabase_files$time_period
-    #     minute_data(prep_minute_data(fitabase_files))
-    #     incProgress(0.5)
-    #     rm(fitabase_files)
-    #     #upload_message("")
-    #   }
-    # )
-    
     fitabase_files <- read_fitabase_files(zip_path)
-    time_period <- fitabase_files$time_period
+    time_period(fitabase_files$time_period)
     minute_data(prep_minute_data(fitabase_files))
     rm(fitabase_files)
     
-    participants <- time_period$id
-    updateSelectizeInput(inputId = "exploration_participants",
-                         choices = participants,
-                         selected = participants[1:min(5, length(participants))])
-    updateSelectizeInput(inputId = "processing_participants",
-                         choices = participants,
-                         selected = participants[1:min(5, length(participants))])
-    
-    time_period %>%
+    time_period() %>%
       select(id, label, min_time, max_time, is_valid_time_period)
   })
   
@@ -93,6 +93,14 @@ function(input, output) {
     updateSelectizeInput(inputId = "exploration_participants", 
                          selected = input$processing_participants)
   })
+  observeEvent(input$intraday_participant, {
+    updateDateInput(
+      inputId = "intraday_date",
+      value = as.Date(time_period()$min_time[time_period()$id == input$intraday_participant]),
+      min = as.Date(time_period()$min_time[time_period()$id == input$intraday_participant]),
+      max = as.Date(time_period()$max_time[time_period()$id == input$intraday_participant])
+    )
+  })
   
   output$missingness <- renderPlot({
     minute_data() %>% 
@@ -114,6 +122,12 @@ function(input, output) {
   
   output$time_use <- renderPlot({
     plot_time_use(reactive_data()$fitibble, id = 1)
+  })
+  
+  output$intra_day <- renderPlot({
+    reactive_data()$fitibble %>% 
+      plot_intraday(id = input$intraday_participant, 
+                    date = input$intraday_date)
   })
   
   output$basic_summary <- renderPlot({

@@ -121,6 +121,19 @@ body <- dashboardBody(
             "Time Use",
             shinycssloaders::withSpinner(plotOutput("time_use"))
           )
+        ), 
+        tabBox(
+          title = "",
+          width=12,
+          tabPanel(
+            "Intra-day",
+            selectInput(inputId = "intraday_participant", 
+                        label = "Choose a participant", 
+                        choices = NULL), 
+            dateInput(inputId = "intraday_date", 
+                      label = "Choose a date"),
+            shinycssloaders::withSpinner(plotOutput("intra_day"))
+          )
         )
       )
     ),
