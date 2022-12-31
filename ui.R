@@ -42,7 +42,29 @@ sidebar <- dashboardSidebar(
       radioButtons(inputId = "valid_day_method",
                    label = "Valid day method",
                    choices = c("Valid adherent hours" = "valid_adherent_hours",
-                               "Valid step count" = "valid_step_count"))
+                               "Valid step count" = "valid_step_count")), 
+      conditionalPanel(
+        condition = "input.valid_day_method == 'valid_adherent_hours'", 
+        sliderInput(
+          inputId = "minimum_adherent_hours",
+          label = "Minimum adherent hours",
+          min = 0, 
+          max = 24, 
+          value = 10, 
+          step = 1
+        )
+      ), 
+      conditionalPanel(
+        condition = "input.valid_day_method == 'valid_step_count'", 
+        sliderInput(
+          inputId = "minimum_step_count",
+          label = "Minimum step count",
+          min = 0,
+          max = 5000,
+          value = 1000, 
+          step = 500
+        )
+      )
     )
   )
 )
