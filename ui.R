@@ -1,7 +1,7 @@
 library(shiny)
 library(shinydashboard)
 library(shinycssloaders)
-library(shinyWidgets)
+library(shinyBS)
 library(tidyverse)
 library(magrittr)
 library(fitibble)
@@ -33,16 +33,28 @@ sidebar <- dashboardSidebar(
                      "Choi on steps" = "choi_steps", 
                      "None" = "none"
                    )), 
+      bsTooltip("nonwear", 
+                "Fitbit is not equipped with a component that distinguish minutes the device is worn, thus processing methods are used to determine non-wear time. Full details of the methods in the Processing Parameters tab.",
+                "right", 
+                options = list(container = "body")),
       sliderInput(inputId = "hours_between", 
                   label = "Adherent hours between", 
                   min = 0, 
                   max = 24, 
                   value = c(8, 20), 
                   step = 1), 
+      bsTooltip("hours_between", 
+                "The adherent wear rule is applied at a minute-level data and is related to the study’s wear intructions. We say that a minute of wear is adherent when it occurs between the hours of the day that adhere to the study design and the wear instructions.",
+                "right", 
+                options = list(container = "body")),
       radioButtons(inputId = "valid_day_method",
                    label = "Valid day method",
                    choices = c("Valid adherent hours" = "valid_adherent_hours",
                                "Valid step count" = "valid_step_count")), 
+      bsTooltip("valid_day_method", 
+                "Cycles in PA are assumed to occure on a daily basis. The valid day criteria determine which days to include in an analysis.", 
+                "right", 
+                options = list(container = "body")), 
       conditionalPanel(
         condition = "input.valid_day_method == 'valid_adherent_hours'", 
         sliderInput(
@@ -52,7 +64,11 @@ sidebar <- dashboardSidebar(
           max = 24, 
           value = 10, 
           step = 1
-        )
+        ), 
+        bsTooltip("minimum_adherent_hours", 
+                  "Minimum number of hours of adherent wear in a day to consider it valid.", 
+                  "right", 
+                  options = list(container = "body"))
       ), 
       conditionalPanel(
         condition = "input.valid_day_method == 'valid_step_count'", 
@@ -63,7 +79,11 @@ sidebar <- dashboardSidebar(
           max = 5000,
           value = 1000, 
           step = 500
-        )
+        ), 
+        bsTooltip("minimum_step_count", 
+                  "Minimum number of steps in a day to consider it valid.", 
+                  "right", 
+                  options = list(container = "body"))
       )
     )
   )

@@ -54,7 +54,15 @@ function(input, output) {
       )
     }
   })
-
+  
+  # addPopover(
+  #   session = getDefaultReactiveDomain(), 
+  #   id = "hours_between",
+  #   placement = "bottom", 
+  #   title = "Hello! ", 
+  #   content = "This is a hover pop-up. You'll have to click to see the next one."
+  # )
+  
   minute_data <- reactiveVal(tibble())
   time_period <- reactiveVal(tibble())
   
