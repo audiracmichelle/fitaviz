@@ -97,13 +97,19 @@ body <- dashboardBody(
     tabItem(
       tabName = "tab_preparation", 
       fluidPage(
-        box(
-          width=12, 
-          headerBorder = FALSE, 
-          fileInput("zip", "Fitabase zip file", accept = ".zip")
-        ), 
-        #verbatimTextOutput("upload_status"),
-        shinycssloaders::withSpinner(dataTableOutput("time_period"))
+        tabBox(
+          title = "",
+          width=12,
+          tabPanel(
+            "Data upload",
+            fileInput("zip", "Fitabase zip file", accept = ".zip"), 
+            shinycssloaders::withSpinner(dataTableOutput("time_period"))
+          ), 
+          tabPanel(
+            "Data preparation description",
+            HTML(read_file("guides/guide_preparation.html"))
+          )
+        )
       )
     ),
     tabItem(
@@ -124,6 +130,10 @@ body <- dashboardBody(
           tabPanel(
             "Missing values",
             shinycssloaders::withSpinner(plotOutput("missingness"))
+          ), 
+          tabPanel(
+            "Plot description",
+            HTML(read_file("guides/guide_missing.html"))
           )
         ), 
         tabBox(
@@ -132,6 +142,10 @@ body <- dashboardBody(
           tabPanel(
             "Intensity Levels",
             shinycssloaders::withSpinner(plotOutput("scatter"))
+          ), 
+          tabPanel(
+            "Plot description",
+            HTML(read_file("guides/guide_intensity.html"))
           )
         )
       )
@@ -154,6 +168,10 @@ body <- dashboardBody(
           tabPanel(
             "Wear heatmap",
             shinycssloaders::withSpinner(plotOutput("wear_heatmap"))
+          ), 
+          tabPanel(
+            "Plot description",
+            HTML(read_file("guides/guide_heatmap.html"))
           )
         ),
         tabBox(
@@ -162,6 +180,10 @@ body <- dashboardBody(
           tabPanel(
             "Time Use",
             shinycssloaders::withSpinner(plotOutput("time_use"))
+          ), 
+          tabPanel(
+            "Plot description",
+            HTML(read_file("guides/guide_timeuse.html"))
           )
         ), 
         tabBox(

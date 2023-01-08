@@ -1,0 +1,10 @@
+<p><strong>Fitaviz</strong> consumes data exports from <strong>Fitabase</strong>. It accepts three types of files: <code>heartrate_1min</code>, <code>minuteStepsNarrow</code>, and <code>minuteIntensitiesNarrow</code>. The files contain minute-by-minute average heart rate (HR), total step counts and physical activity intensity sequences.  </p>
+<p>When new datasets are uploaded by the user, <strong>Fitaviz</strong> automatically executes the preparation steps that are described next: </p>
+<ul>
+<li>Participant&#39;s are numbered and assigned an id. </li>
+<li>Full dataset joins are performed obtaining measurements for each participant id, date and minute of the day combination. Every minute in a day is assigned a value; that is, timestamps follow a complete consecutive sequence. </li>
+<li>When values are ommitted in the raw datasets, the gaps are filled with <code>NA</code> and are considered missing. </li>
+<li>A participant&#39;s time period is set to encompass full day observations for the three input sequences: HR, steps and intensity levels. That is, the first timestamp of a patient is fixed as the minute 00:00 of the day coming after the first date that contains %HR, steps and intensity 
+measurements for that patient. Likewise, the last timestamp is the minute 23:59 of the day coming before the last day containing any of the patient&#39;s measurements. </li>
+</ul>
+<p>When Fitaviz finishes preparing the analysis dataset, a summary table expands reporting the Fitaviz ID, Fitabase label, and the first and last time stamps for each patient.</p>
